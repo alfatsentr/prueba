@@ -1,15 +1,39 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, NgZone, AfterViewInit} from '@angular/core';
+declare const gapi: any;
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements  AfterViewInit {
+  googleLoginButtonId = 'google-login-button';
+  userAuthToken = null;
+  userDisplayName = 'empty';
 
-  constructor() { }
-
-  ngOnInit() {
+  constructor(private _zone: NgZone) {
+    console.log(this);
   }
 
+  // Angular hook that allows for interaction with elements inserted by the
+  // rendering of a view.
+  ngAfterViewInit() {
+    // Converts the Google login button stub to an actual button.
+    gapi.signin2.render(
+      this.googleLoginButtonId,
+      {
+        'onSuccess': this.onGoogleLoginSuccess,
+        'scope': 'profile',
+        'theme': 'dark'
+      });
+  }
+
+  // Triggered after a user successfully logs in using the Google external
+  // login provider.
+  onGoogleLoginSuccess = (loggedInUser) => {
+    this._zone.run(() => {
+        this.userAuthToken = loggedInUser.getAuthResponse().id_token;
+        this.userDisplayName = loggedInUser.getBasicProfile().getName();
+    });
+  }
 }
